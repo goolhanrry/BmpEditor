@@ -255,3 +255,124 @@ void BmpEditor::bmpFocus(const char * srcBmpName, const char* destBmpName)
 		cout << "Focus failed" << endl;
 	}
 }
+
+void BmpEditor::bmp256to32b(const char* srcBmpName, const char* destBmpName)
+{
+	try
+	{
+		// 打开源文件
+		if (fopen_s(&file, srcBmpName, "rb"))
+		{
+			cout << "Source file open error!" << endl;
+			return;
+		}
+
+		// 读取位图基本信息
+		fread(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+		fread(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+		fread(clrTab, 1024, 1, file);
+
+		// 读取位图矩阵大小
+		mtxWidth = (bmpInfoHeader.biWidth + 3) / 4 * 4;
+		mtxHeight = bmpInfoHeader.biHeight;
+
+		// 文件格式校验
+		if (bmpInfoHeader.biBitCount != 8)
+		{
+			cout << "Format error!" << endl;
+			return;
+		}
+
+		// 编制实体索引
+		BITMAPFILEHEADER outputFileHeader;
+		BITMAPINFOHEADER outputInfoHeader;
+		int LineBytes = (bmpInfoHeader.biWidth + 3) / 4 * 4;
+		int LineBytes2 = bmpInfoHeader.biWidth;
+
+		outputFileHeader.bfType = bmpFileHeader.bfType;
+		outputFileHeader.bfSize = 54 + LineBytes2 * 4 * bmpInfoHeader.biHeight;
+		outputFileHeader.bfReserved1 = 0;
+		outputFileHeader.bfReserved2 = 0;
+		outputFileHeader.bfOffBits = 54;
+
+		outputInfoHeader.biSize = 40;
+		outputInfoHeader.biWidth = bmpInfoHeader.biWidth;
+		outputInfoHeader.biHeight = bmpInfoHeader.biHeight;
+		outputInfoHeader.biPlanes = 1;
+		outputInfoHeader.biBitCount = 32;
+		outputInfoHeader.biCompression = 0;
+		outputInfoHeader.biSizeImage = 0;
+		outputInfoHeader.biXPelsPerMeter = 0;
+		outputInfoHeader.biYPelsPerMeter = 0;
+		outputInfoHeader.biClrUsed = 0;
+		outputInfoHeader.biClrImportant = 0;
+
+		// 构造原始矩阵
+		unsigned char * pSrcCellLineBuf = new unsigned char[LineBytes];         // 源文件行缓冲
+		unsigned **pIdxCellMatixBuf = new unsigned*[outputInfoHeader.biHeight]; // 索引矩阵
+		for (unsigned i = 0; i < outputInfoHeader.biHeight; i++)
+		{
+			fseek(file, bmpFileHeader.bfOffBits + i * sizeof(char)*LineBytes, 0);
+			fread(pSrcCellLineBuf, sizeof(char), LineBytes, file);
+			pIdxCellMatixBuf[i] = new unsigned[LineBytes2];
+			for (unsigned j = 0; j < LineBytes2; j++)
+			{
+				if (pSrcCellLineBuf[j] == 0xFF)
+				{
+					pIdxCellMatixBuf[i][j] = 0xFFFFFFFF;
+				}
+				else
+				{
+					int k = pSrcCellLineBuf[j];
+					unsigned uintTmp = k;
+
+					// 取对应颜色
+					uintTmp = clrTab[k * 4];
+					uintTmp <<= 8;
+					uintTmp += clrTab[k * 4 + 1];
+					uintTmp <<= 8;
+					uintTmp += clrTab[k * 4 + 2];
+					uintTmp <<= 8;
+					uintTmp += clrTab[k * 4 + 3];
+
+					pIdxCellMatixBuf[i][j] = uintTmp;
+				}
+			}
+		}
+
+		// 打开结果位图文件
+		FILE *outputFile;
+		if (fopen_s(&outputFile, destBmpName, "wb"))
+		{
+			cout << "Output file open error!" << endl;
+			return;
+		}
+
+		// 写入位图基本信息
+		fwrite(&outputFileHeader, sizeof(BITMAPFILEHEADER), 1, outputFile);
+		fwrite(&outputInfoHeader, sizeof(BITMAPINFOHEADER), 1, outputFile);
+		fwrite(clrTab, 1024, 1, outputFile);
+
+		// 写入转换结果
+		for (unsigned i = 0; i < outputInfoHeader.biHeight; i++)
+		{
+			fseek(outputFile, 54 + i * sizeof(unsigned)*LineBytes2, 0);
+			fwrite(pIdxCellMatixBuf[i], sizeof(unsigned), LineBytes2, outputFile);
+			delete[] pIdxCellMatixBuf[i];
+			pIdxCellMatixBuf[i] = nullptr;
+		}
+
+		delete[] pIdxCellMatixBuf;
+		delete[] pSrcCellLineBuf;
+
+		// 关闭文件
+		fclose(file);
+		fclose(outputFile);
+
+		cout << "Transform success" << endl;
+	}
+	catch (...)
+	{
+		cout << "Transform failed" << endl;
+	}
+}

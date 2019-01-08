@@ -8,6 +8,7 @@ public:
 	void bmpReverse(const char *srcBmpName, const char *destBmpName);
 	void bmpOverlap(const char *srcBmpName, const char *newBmpName, const char *destBmpName);
 	void bmpFocus(const char *srcBmpName, const char *destBmpName);
+	void bmp256to32b(const char *srcBmpName, const char *destBmpName);
 
 private:
 	void releaseRAM(unsigned char **mtxData, unsigned mtxHeight);
