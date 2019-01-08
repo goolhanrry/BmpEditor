@@ -2,15 +2,11 @@
 
 int main()
 {
-	BmpEditor bmpEditor("assets\\source.bmp");
+	BmpEditor bmpEditor;
 
-	if (bmpEditor.file)
-	{
-		bmpEditor.bmpReverse("assets\\source_reverse_output.bmp");
-		bmpEditor.bmpOverlap("assets\\overlap.bmp", "assets\\source_overlap_output.bmp");
-	}
-
-	system("pause");
+	bmpEditor.bmpReverse("assets\\source.bmp", "output\\reverse_output.bmp");
+	bmpEditor.bmpOverlap("assets\\source.bmp", "assets\\overlap.bmp", "output\\overlap_output.bmp");
+	bmpEditor.bmpFocus("assets\\source.bmp", "output\\focus_output.bmp");
 
 	return 0;
 }

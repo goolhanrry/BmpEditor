@@ -1,13 +1,30 @@
 ﻿#include <iostream>
 #include "BmpEditor.h"
+#include "AverageTmp.h"
 using namespace std;
 
-BmpEditor::BmpEditor(const char *srcBmpName)
+void BmpEditor::releaseRAM(unsigned char **mtxData, unsigned mtxHeight)
+{
+	if (mtxData)
+	{
+		// 释放无用内存
+		for (unsigned i = 0; i < mtxHeight; i++)
+		{
+			delete[] mtxData[i];
+			mtxData[i] = nullptr;
+		}
+
+		delete[] mtxData;
+		mtxData = nullptr;
+	}
+}
+
+void BmpEditor::loadBmp(const char *srcBmpName)
 {
 	// 打开源文件
 	if (fopen_s(&file, srcBmpName, "rb"))
 	{
-		cout << "Source file not found!" << endl;
+		cout << "Source file open error!" << endl;
 		return;
 	}
 
@@ -35,21 +52,35 @@ BmpEditor::BmpEditor(const char *srcBmpName)
 	fclose(file);
 }
 
-BmpEditor::~BmpEditor()
+void BmpEditor::saveBmp(const char *destBmpName, BITMAPFILEHEADER bmpFileHeader, BITMAPINFOHEADER bmpInfoHeader, unsigned char clrTab[], unsigned mtxWidth, unsigned mtxHeight, unsigned char **mtxBuf)
 {
-	// 释放无用内存
-	for (unsigned i = 0; i < mtxHeight; i++)
+	// 打开结果位图文件
+	if (fopen_s(&file, destBmpName, "wb"))
 	{
-		delete[] mtxData[i];
-		mtxData[i] = nullptr;
+		cout << "Output file open error!" << endl;
+		return;
 	}
 
-	delete[] mtxData;
-	mtxData = nullptr;
+	// 写入位图基本信息
+	fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+	fwrite(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+	fwrite(clrTab, 1024, 1, file);
+
+	// 写入转换结果
+	for (unsigned i = 0; i < mtxHeight; i++)
+	{
+		fwrite(mtxBuf[i], 1, mtxWidth, file);
+	}
+
+	// 关闭文件
+	fclose(file);
 }
 
-void BmpEditor::bmpReverse(const char *destBmpName)
+void BmpEditor::bmpReverse(const char *srcBmpName, const char *destBmpName)
 {
+	// 打开源文件
+	loadBmp(srcBmpName);
+
 	try
 	{
 		// 初始化输出矩阵缓存
@@ -65,36 +96,12 @@ void BmpEditor::bmpReverse(const char *destBmpName)
 			}
 		}
 
-		// 打开结果位图文件
-		if (fopen_s(&file, destBmpName, "wb"))
-		{
-			cout << "Reverse output file open error!" << endl;
-			return;
-		}
-
-		// 写入位图基本信息
-		fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
-		fwrite(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
-		fwrite(clrTab, 1024, 1, file);
-
-		// 写入转换结果
-		for (unsigned i = 0; i < mtxHeight; i++)
-		{
-			fwrite(mtxBuf[i], 1, mtxWidth, file);
-		}
-
-		// 关闭文件
-		fclose(file);
+		// 保存结果文件
+		saveBmp(destBmpName, bmpFileHeader, bmpInfoHeader, clrTab, mtxWidth, mtxHeight, mtxBuf);
 
 		// 释放无用内存
-		for (unsigned i = 0; i < mtxHeight; i++)
-		{
-			delete[] mtxBuf[i];
-			mtxBuf[i] = nullptr;
-		}
-
-		delete[] mtxBuf;
-		mtxBuf = nullptr;
+		releaseRAM(mtxData, mtxHeight);
+		releaseRAM(mtxBuf, mtxHeight);
 
 		cout << "Reverse success" << endl;
 	}
@@ -104,15 +111,18 @@ void BmpEditor::bmpReverse(const char *destBmpName)
 	}
 }
 
-void BmpEditor::bmpOverlap(const char *newBmpName, const char *destBmpName)
+void BmpEditor::bmpOverlap(const char *srcBmpName, const char *newBmpName, const char *destBmpName)
 {
+	// 打开源文件
+	loadBmp(srcBmpName);
+
 	try
 	{
 		BITMAPFILEHEADER newBmpFileHeader;
 		BITMAPINFOHEADER newBmpInfoHeader, outputBmpInfoHeader;
 		unsigned char newClrTab[256 * 4];
 		unsigned newMtxWidth, newMtxHeight, outputMtxWidth, outputMtxHeight;
-		unsigned char **newMtxData, **outputMtxData;
+		unsigned char **newMtxData, **mtxBuf;
 
 		// 打开新文件
 		if (fopen_s(&file, newBmpName, "rb"))
@@ -151,60 +161,97 @@ void BmpEditor::bmpOverlap(const char *newBmpName, const char *destBmpName)
 		outputMtxHeight = outputBmpInfoHeader.biHeight;
 
 		// 生成输出矩阵
-		outputMtxData = new unsigned char*[outputMtxHeight];
+		mtxBuf = new unsigned char*[outputMtxHeight];
 		for (unsigned i = 0; i < outputMtxHeight; i++)
 		{
-			outputMtxData[i] = new unsigned char[outputMtxWidth];
+			mtxBuf[i] = new unsigned char[outputMtxWidth];
 			for (unsigned j = 0; j < outputMtxWidth; j++)
 			{
-				outputMtxData[i][j] = mtxData[i][j] + newMtxData[i][j] + 1;
+				mtxBuf[i][j] = mtxData[i][j] + newMtxData[i][j] + 1;
 			}
 		}
 
-		// 打开结果位图文件
-		if (fopen_s(&file, destBmpName, "wb"))
-		{
-			cout << "Overlap output file open error!" << endl;
-			return;
-		}
-
-		// 写入位图基本信息
-		fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
-		fwrite(&outputBmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
-		fwrite(clrTab, 1024, 1, file);
-
-		// 写入转换结果
-		for (unsigned i = 0; i < outputMtxHeight; i++)
-		{
-			fwrite(outputMtxData[i], 1, outputMtxWidth, file);
-		}
-
-		// 关闭文件
-		fclose(file);
+		// 保存结果文件
+		saveBmp(destBmpName, bmpFileHeader, bmpInfoHeader, clrTab, mtxWidth, mtxHeight, mtxBuf);
 
 		// 释放无用内存
-		for (unsigned i = 0; i < newMtxHeight; i++)
-		{
-			delete[] newMtxData[i];
-			newMtxData[i] = nullptr;
-		}
-
-		for (unsigned i = 0; i < outputMtxHeight; i++)
-		{
-			delete[] outputMtxData[i];
-			outputMtxData[i] = nullptr;
-		}
-
-		delete[] newMtxData;
-		newMtxData = nullptr;
-
-		delete[] outputMtxData;
-		outputMtxData = nullptr;
+		releaseRAM(mtxData, mtxHeight);
+		releaseRAM(mtxBuf, mtxHeight);
+		releaseRAM(newMtxData, newMtxHeight);
 
 		cout << "Overlap success" << endl;
 	}
 	catch (...)
 	{
 		cout << "Overlap failed" << endl;
+	}
+}
+
+void BmpEditor::bmpFocus(const char * srcBmpName, const char* destBmpName)
+{
+	// 使用均值滤波
+	AverageTmp *tmp = new AverageTmp;
+
+	// 打开源文件
+	loadBmp(srcBmpName);
+
+	try
+	{
+		// 初始化输出矩阵缓存
+		unsigned char **mtxBuf = new unsigned char *[mtxHeight];
+		for (unsigned i = 0; i < mtxHeight; i++)
+		{
+			mtxBuf[i] = new unsigned char[mtxWidth];
+			for (unsigned j = 0; j < mtxWidth; j++)
+			{
+				mtxBuf[i][j] = 0xff;
+			}
+		}
+
+		// 平滑处理
+		for (unsigned i = 0; i < mtxHeight; i++)
+		{
+			for (unsigned j = 0; j < mtxWidth; j++)
+			{
+				if (mtxData[i][j] == 0xff)
+				{
+					continue;
+				}
+
+				unsigned char sum = 0;
+				for (unsigned k = 0; k < tmp->getSize(); k++)
+				{
+					// 获取当前处理的坐标
+					int currX = j + tmp->getOffsetX(k);
+					int currY = i + tmp->getOffsetY(k);
+
+					// 若超出范围则跳过
+					if ((currX < 0) || (currX > mtxWidth - 1) || (currY < 0) || (currY > mtxHeight - 1))
+					{
+						continue;
+					}
+
+					// 加权求和
+					sum += mtxData[currY][currX] * tmp->getWeight(k);
+				}
+
+				// 加权平均
+				mtxBuf[i][j] = sum / tmp->getSize();
+			}
+		}
+
+		// 保存结果文件
+		saveBmp(destBmpName, bmpFileHeader, bmpInfoHeader, clrTab, mtxWidth, mtxHeight, mtxBuf);
+
+		// 释放无用内存
+		releaseRAM(mtxData, mtxHeight);
+		releaseRAM(mtxBuf, mtxHeight);
+		delete tmp;
+
+		cout << "Focus success" << endl;
+	}
+	catch (...)
+	{
+		cout << "Focus failed" << endl;
 	}
 }
