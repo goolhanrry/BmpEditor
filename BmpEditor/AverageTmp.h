@@ -1,4 +1,6 @@
-class AverageTmp
+#include "Template.h"
+
+class AverageTmp : public Template
 {
 public:
 	char getOffsetX(unsigned i);

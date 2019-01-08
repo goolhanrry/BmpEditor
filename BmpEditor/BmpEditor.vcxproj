@@ -155,6 +155,7 @@
     <ClInclude Include="AverageTmp.h" />
     <ClInclude Include="BmpEditor.h" />
     <ClInclude Include="OctagonTmp.h" />
+    <ClInclude Include="Template.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AverageTmp.cpp" />
