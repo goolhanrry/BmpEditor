@@ -10,8 +10,8 @@ BmpEditor::BmpEditor()
 
 BmpEditor::~BmpEditor()
 {
-	delete averageTmp;
-	delete octagonTmp;
+	// delete averageTmp;
+	// delete octagonTmp;
 
 	averageTmp = nullptr;
 	octagonTmp = nullptr;
@@ -389,7 +389,7 @@ void BmpEditor::bmp256to32b(const char* srcBmpName, const char* destBmpName)
 	}
 }
 
-void BmpEditor::distanceTransform(const char *srcBmpName, Template *tmp, const char *locBmpName, const char *disBmpName)
+void BmpEditor::distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp)
 {
 	try
 	{

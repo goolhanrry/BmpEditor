@@ -5,13 +5,13 @@ int main()
 	BmpEditor bmpEditor;
 
 	// 第二次实习
-	bmpEditor.bmpReverse("assets\\source.bmp", "output\\reverse_output.bmp");
-	bmpEditor.bmpOverlap("assets\\source.bmp", "assets\\overlap.bmp", "output\\overlap_output.bmp");
-	bmpEditor.bmpFocus("assets\\source.bmp", "output\\focus_output.bmp", bmpEditor.averageTmp);
+	bmpEditor.bmpReverse("assets\\source.bmp", "output\\1_reverse_output.bmp");
+	bmpEditor.bmpOverlap("assets\\source.bmp", "assets\\overlap.bmp", "output\\2_overlap_output.bmp");
+	bmpEditor.bmpFocus("assets\\source.bmp", "output\\3_focus_output.bmp", bmpEditor.averageTmp);
 
 	//第三次实习
-	bmpEditor.bmp256to32b("assets\\source.bmp", "output\\256to32b_output.bmp");
-	bmpEditor.distanceTransform("assets\\source.bmp", "output\\loc_output.bmp", "output\\dis_output.bmp", bmpEditor.octagonTmp);
+	bmpEditor.bmp256to32b("assets\\source.bmp", "output\\4_256to32b_output.bmp");
+	bmpEditor.distanceTransform("assets\\source.bmp", "output\\5_loc_output.bmp", "output\\5_dis_output.bmp", bmpEditor.octagonTmp);
 
 	return 0;
 }
