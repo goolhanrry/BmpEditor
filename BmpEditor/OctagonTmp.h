@@ -1,6 +1,6 @@
 #include "Template.h"
 
-class OctagonTmp :public Template
+class OctagonTmp : public Template
 {
 public:
 	char getOffsetX(unsigned i);

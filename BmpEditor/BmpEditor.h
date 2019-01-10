@@ -1,14 +1,22 @@
 ﻿#include <iostream>
 #include <windows.h>
 #include <wingdi.h>
+#include "AverageTmp.h"
+#include "OctagonTmp.h"
 
 class BmpEditor
 {
 public:
+	BmpEditor();
+	~BmpEditor();
 	void bmpReverse(const char *srcBmpName, const char *destBmpName);
 	void bmpOverlap(const char *srcBmpName, const char *newBmpName, const char *destBmpName);
-	void bmpFocus(const char *srcBmpName, const char *destBmpName);
+	void bmpFocus(const char *srcBmpName, const char *destBmpName, Template *tmp);
 	void bmp256to32b(const char *srcBmpName, const char *destBmpName);
+	void distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp);
+
+	AverageTmp *averageTmp;
+	OctagonTmp *octagonTmp;
 
 private:
 	void releaseRAM(unsigned char **mtxData, unsigned mtxHeight);
