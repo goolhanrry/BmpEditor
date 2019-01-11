@@ -27,6 +27,9 @@
     <ClInclude Include="Template.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ManHattanTmp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BmpEditor.cpp">
@@ -39,6 +42,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="AverageTmp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ManHattanTmp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

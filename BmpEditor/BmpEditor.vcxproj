@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="AverageTmp.h" />
     <ClInclude Include="BmpEditor.h" />
+    <ClInclude Include="ManHattanTmp.h" />
     <ClInclude Include="OctagonTmp.h" />
     <ClInclude Include="Template.h" />
   </ItemGroup>
@@ -161,6 +162,7 @@
     <ClCompile Include="AverageTmp.cpp" />
     <ClCompile Include="BmpEditor.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ManHattanTmp.cpp" />
     <ClCompile Include="OctagonTmp.cpp" />
   </ItemGroup>
   <ItemGroup>

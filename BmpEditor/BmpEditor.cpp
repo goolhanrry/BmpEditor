@@ -6,15 +6,18 @@ BmpEditor::BmpEditor()
 {
 	averageTmp = new AverageTmp();
 	octagonTmp = new OctagonTmp();
+	manHattanTmp = new ManHattanTmp();
 }
 
 BmpEditor::~BmpEditor()
 {
 	// delete averageTmp;
 	// delete octagonTmp;
+	// delete manHattanTmp;
 
 	averageTmp = nullptr;
 	octagonTmp = nullptr;
+	manHattanTmp = nullptr;
 }
 
 void BmpEditor::releaseRAM(unsigned char **mtxData, unsigned mtxHeight)
@@ -381,15 +384,15 @@ void BmpEditor::bmp256to32b(const char* srcBmpName, const char* destBmpName)
 		fclose(file);
 		fclose(outputFile);
 
-		cout << "Transform success" << endl;
+		cout << "256 to 32b success" << endl;
 	}
 	catch (...)
 	{
-		cout << "Transform failed" << endl;
+		cout << "256 to 32b failed" << endl;
 	}
 }
 
-void BmpEditor::distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp)
+void BmpEditor::distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp, unsigned char maxColor)
 {
 	try
 	{
@@ -417,10 +420,10 @@ void BmpEditor::distanceTransform(const char *srcBmpName, const char *locBmpName
 		{
 			locMtx[i] = new unsigned char[mtxWidth];
 			disMtx[i] = new float[mtxWidth];
-			fread(locMtx[i], sizeof(unsigned char), mtxWidth, file);
+			fread(locMtx[i], 1, mtxWidth, file);
 			for (unsigned j = 0; j < bmpInfoHeader.biWidth; j++)
 			{
-				disMtx[i][j] = locMtx[i][j] == 255 ? FLT_MAX : 0.0;
+				disMtx[i][j] = locMtx[i][j] == maxColor ? FLT_MAX : 0.0;
 			}
 		}
 
@@ -578,7 +581,6 @@ void BmpEditor::generateBoundary(const char *srcBmpName, const char *destBmpName
 	{
 		// 初始化输出矩阵缓存
 		unsigned char **mtxBuf = new unsigned char*[mtxHeight];
-
 		for (int i = 0; i < mtxHeight; i++)
 		{
 			mtxBuf[i] = new unsigned char[mtxWidth];
@@ -622,4 +624,127 @@ void BmpEditor::generateBoundary(const char *srcBmpName, const char *destBmpName
 	{
 		cout << "Generate Boundary failed" << endl;
 	}
+}
+
+void BmpEditor::generateBuffer(const char *locBmpName, const char *disBmpName, const char *destBmpName, float radius)
+{
+	try
+	{
+		// 打开源文件
+		if (fopen_s(&file, locBmpName, "rb"))
+		{
+			cout << "Source file open error!" << endl;
+			return;
+		}
+
+		// 读取位图基本信息
+		fread(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+		fread(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+		fread(clrTab, 1024, 1, file);
+
+		// 读取位图矩阵大小
+		mtxWidth = (bmpInfoHeader.biWidth + 3) / 4 * 4;
+		mtxHeight = bmpInfoHeader.biHeight;
+
+		// 读取位图矩阵数据
+		float **mtxFloatData = new float *[mtxHeight];
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			mtxFloatData[i] = new float[bmpInfoHeader.biWidth];
+			for (int j = 0; j < bmpInfoHeader.biWidth; j++)
+			{
+				fread(&mtxFloatData[i][j], sizeof(float), 1, file);
+			}
+		}
+
+		// 初始化输出矩阵缓存
+		unsigned char **mtxBuf = new unsigned char *[mtxHeight];
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			mtxBuf[i] = new unsigned char[mtxWidth];
+			for (int j = 0; j < bmpInfoHeader.biWidth; j++)
+			{
+				mtxBuf[i][j] = 0xff;
+			}
+		}
+
+		// 缓冲区提取
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			for (int j = 0; j < bmpInfoHeader.biWidth; j++)
+			{
+				mtxBuf[i][j] = mtxFloatData[i][j] >= radius ? 0xff : 0;
+			}
+		}
+
+		// 获取输出文件头
+		if (fopen_s(&file, disBmpName, "rb"))
+		{
+			cout << "Distribution file open error!" << endl;
+			return;
+		}
+
+		fread(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+		fread(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+		fread(clrTab, 1024, 1, file);
+		fclose(file);
+
+		// 打开结果位图文件
+		if (fopen_s(&file, destBmpName, "wb"))
+		{
+			cout << "Output file open error!" << endl;
+			return;
+		}
+
+		// 写入位图基本信息
+		fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+		fwrite(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+		fwrite(clrTab, 1024, 1, file);
+
+		// 写入转换结果
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			fwrite(mtxBuf[i], 1, mtxWidth, file);
+		}
+
+		// 关闭文件
+		fclose(file);
+
+		// 释放无用内存
+		for (unsigned i = 0; i < mtxHeight; i++)
+		{
+			delete[] mtxFloatData[i];
+			delete[] mtxBuf[i];
+
+			mtxFloatData[i] = nullptr;
+			mtxBuf[i] = nullptr;
+		}
+
+		delete[] mtxFloatData;
+		delete[] mtxBuf;
+
+		mtxFloatData = nullptr;
+		mtxBuf = nullptr;
+
+		cout << "Generate Buffer success" << endl;
+	}
+	catch (...)
+	{
+		cout << "Generate Buffer failed" << endl;
+	}
+}
+
+void BmpEditor::adhesionTransform(const char *srcBmpName, const char *destBmpName, Template *tmp, float outRadius, float inRadius)
+{
+	distanceTransform(srcBmpName, "temp\\loc_output.bmp", "temp\\dis_output.bmp", tmp, 0xff);
+	generateBuffer("temp\\loc_output.bmp", "temp\\dis_output.bmp", "temp\\buffer.bmp", outRadius);
+
+	distanceTransform("temp\\buffer.bmp", "temp\\loc_output.bmp", "temp\\dis_output.bmp", tmp, 0);
+	generateBuffer("temp\\loc_output.bmp", "temp\\dis_output.bmp", destBmpName, inRadius);
+}
+
+void BmpEditor::generateAxis(const char *srcBmpName, const char *destBmpName, Template *tmp)
+{
+	distanceTransform(srcBmpName, "temp\\loc_output.bmp", "temp\\dis_output.bmp", tmp, 0xff);
+	generateBoundary("temp\\dis_output.bmp", destBmpName);
 }

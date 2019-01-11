@@ -3,6 +3,7 @@
 #include <wingdi.h>
 #include "AverageTmp.h"
 #include "OctagonTmp.h"
+#include "ManHattanTmp.h"
 
 class BmpEditor
 {
@@ -13,11 +14,15 @@ public:
 	void bmpOverlap(const char *srcBmpName, const char *newBmpName, const char *destBmpName);
 	void bmpFocus(const char *srcBmpName, const char *destBmpName, Template *tmp);
 	void bmp256to32b(const char *srcBmpName, const char *destBmpName);
-	void distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp);
+	void distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp, unsigned char maxColor);
 	void generateBoundary(const char *srcBmpName, const char *destBmpName);
+	void generateBuffer(const char *locBmpName, const char *disBmpName, const char *destBmpName, float radius);
+	void adhesionTransform(const char *srcBmpName, const char *destBmpName, Template *tmp, float outRadius, float inRadius);
+	void generateAxis(const char *srcBmpName, const char *destBmpName, Template *tmp);
 
 	AverageTmp *averageTmp;
 	OctagonTmp *octagonTmp;
+	ManHattanTmp *manHattanTmp;
 
 private:
 	void releaseRAM(unsigned char **mtxData, unsigned mtxHeight);
