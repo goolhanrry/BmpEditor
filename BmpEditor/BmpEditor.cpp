@@ -568,3 +568,58 @@ void BmpEditor::distanceTransform(const char *srcBmpName, const char *locBmpName
 		cout << "Distance transform failed" << endl;
 	}
 }
+
+void BmpEditor::generateBoundary(const char *srcBmpName, const char *destBmpName)
+{
+	// 打开源文件
+	loadBmp(srcBmpName);
+
+	try
+	{
+		// 初始化输出矩阵缓存
+		unsigned char **mtxBuf = new unsigned char*[mtxHeight];
+
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			mtxBuf[i] = new unsigned char[mtxWidth];
+			for (int j = 0; j < mtxWidth; j++)
+			{
+				mtxBuf[i][j] = 0xff;
+			}
+		}
+
+		// 边缘提取
+		for (int i = 0; i < mtxHeight; i++)
+		{
+			for (int j = 0; j < mtxWidth; j++)
+			{
+				if ((i == 0) || (j == 0) || (i == mtxHeight - 1) || (j == mtxWidth - 1))
+				{
+					continue;
+				}
+
+				if ((mtxData[i - 1][j] != mtxData[i + 1][j]) || (mtxData[i][j + 1] != mtxData[i][j - 1]))
+				{
+					mtxBuf[i][j] = 0;
+				}
+				else
+				{
+					mtxBuf[i][j] = 0xff;
+				}
+			}
+		}
+
+		// 保存结果文件
+		saveBmp(destBmpName, bmpFileHeader, bmpInfoHeader, clrTab, mtxWidth, mtxHeight, mtxBuf);
+
+		// 释放无用内存
+		releaseRAM(mtxData, mtxHeight);
+		releaseRAM(mtxBuf, mtxHeight);
+
+		cout << "Generate Boundary success" << endl;
+	}
+	catch (...)
+	{
+		cout << "Generate Boundary failed" << endl;
+	}
+}

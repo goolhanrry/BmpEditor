@@ -14,6 +14,7 @@ public:
 	void bmpFocus(const char *srcBmpName, const char *destBmpName, Template *tmp);
 	void bmp256to32b(const char *srcBmpName, const char *destBmpName);
 	void distanceTransform(const char *srcBmpName, const char *locBmpName, const char *disBmpName, Template *tmp);
+	void generateBoundary(const char *srcBmpName, const char *destBmpName);
 
 	AverageTmp *averageTmp;
 	OctagonTmp *octagonTmp;
