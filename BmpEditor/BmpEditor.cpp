@@ -11,10 +11,6 @@ BmpEditor::BmpEditor()
 
 BmpEditor::~BmpEditor()
 {
-	// delete averageTmp;
-	// delete octagonTmp;
-	// delete manHattanTmp;
-
 	averageTmp = nullptr;
 	octagonTmp = nullptr;
 	manHattanTmp = nullptr;
